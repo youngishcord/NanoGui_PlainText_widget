@@ -10,6 +10,9 @@
 
 using namespace nanogui;
 
+// Дока
+// https://github.com/memononen/nanovg/blob/master/src/nanovg.h#L625
+
 class PlainText : public TextBox {
 public:
     PlainText(Widget *parent, const std::string &value = "Untitled");
