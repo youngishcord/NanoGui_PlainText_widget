@@ -46,14 +46,16 @@ add_definitions(${NANOGUI_EXTRA_DEFS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/nanogui/include)
 include_directories(${NANOGUI_EXTRA_INCS})
 
+set(SOURCE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plainText.cpp
+)
+
 # Include/
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-set(SOURCE_FILES
-	src/main.cpp
-)
-
 set(HEADER_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/plainText.h
 )
 
 # Compile a target using NanoGUI
