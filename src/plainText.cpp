@@ -59,6 +59,7 @@ void PlainText::draw(NVGcontext* ctx) {
 
     // Этот параметр отвечает за отступы от краев
     float xSpacing = 5.0f;//mSize.y() * 0.3f;
+    float ySpacing = 5.0f;
 
     float unitWidth = 0;
 
@@ -102,17 +103,40 @@ void PlainText::draw(NVGcontext* ctx) {
         // nvgText(ctx, drawPos.x(), drawPos.y(),
         //     mValue.empty() ? mPlaceholder.c_str() : mValue.c_str(), nullptr);
     } else {
+        // Получение рамок с размером текстбокса
         const int maxGlyphs = 1024;
         NVGglyphPosition glyphs[maxGlyphs];
         float textBound[4];
-        nvgTextBounds(ctx, drawPos.x(), drawPos.y(), mValueTemp.c_str(),
-                      nullptr, textBound);
-        float lineh = textBound[3] - textBound[1];
+        nvgTextBoxBounds(ctx, mPos.x()+xSpacing, mPos.y()+ySpacing, mSize.x()-xSpacing,
+            mValueTemp.c_str(), nullptr, textBound);
+        // nvgTextBounds(ctx, drawPos.x(), drawPos.y(), mValueTemp.c_str(),
+        //               nullptr, textBound);
+
+        // Тут считается количество строк, а в переменной rows сохраняются строки.
+        NVGtextRow rows[128];
+        int nrows = nvgTextBreakLines(ctx, mValueTemp.c_str(), nullptr, mSize.x()-xSpacing, rows, 128);
+
+
+        // Высота курсора?
+        // float lineh = textBound[3] - textBound[1];
+        // float lineh = 20.0f;
+        // можно получить высоту строки так
+        float lineh;
+        nvgTextMetrics(ctx, nullptr, nullptr, &lineh);
 
         // find cursor positions
+        // Тут рассчет количества символов и только 
         int nglyphs =
             nvgTextGlyphPositions(ctx, drawPos.x(), drawPos.y(),
                                   mValueTemp.c_str(), nullptr, glyphs, maxGlyphs);
+        // std::cout << nglyphs << "\n";
+
+        _position2CursorIndex(
+            mMousePos.x(), mMousePos.y(),
+            textBound[2], textBound[3],
+            glyphs, rows,
+            nglyphs, nrows
+        )
         updateCursor(ctx, textBound[2], glyphs, nglyphs);
 
         // compute text offset
@@ -131,12 +155,19 @@ void PlainText::draw(NVGcontext* ctx) {
         // draw text with offset
         // nvgText(ctx, drawPos.x(), drawPos.y(), mValueTemp.c_str(), nullptr);
         nvgTextBox(ctx, mPos.x()+xSpacing, mPos.y()+10, mSize.x()-xSpacing, mValueTemp.c_str(), nullptr);
+        // nvgTextBreakLines(ctx,)
         nvgTextBounds(ctx, drawPos.x(), drawPos.y(), mValueTemp.c_str(),
                       nullptr, textBound);
 
         // recompute cursor positions
         nglyphs = nvgTextGlyphPositions(ctx, drawPos.x(), drawPos.y(),
                 mValueTemp.c_str(), nullptr, glyphs, maxGlyphs);
+        
+        // std::cout << nglyphs << "\n"; 
+
+        // for (int i = 0; i < nrows; i++) {
+        //     std::cout << rows[i].end << "\n"; 
+        // }
 
         if (mCursorPos > -1) {
             if (mSelectionPos > -1) {
@@ -170,6 +201,24 @@ void PlainText::draw(NVGcontext* ctx) {
     nvgRestore(ctx);
 }
 
+// Функция пересчета мирового положения в индексы текста для отрисовки курсора и т.д..
+int PlainText::_position2CursorIndex(
+    float posX, float posY, // Позиция мыши или другого источника
+    float lastX, float lastY, // Координаты границы отрисовки
+    const NVGglyphPosition *glyphs, // Набор символов
+    const NVGtextRow *rows, // Набор строк
+    int size, int nRows // Размер текста и количество строк.
+    ) 
+{
+    // я думаю, что тут мы считаем находится ли курсор в области по оси X 
+    // используя minx, maxx из NVGtextRow
+    // для пересчета Y используем индекс строки и значение высоты линии, которое еще надо передать, но я его уже считал в основной функции.
+    // проверяем находимся ли мы в области, если нет то некст область, если да то
+    // начинам перебирать символы, пока не найдем более близкий и потом принимаем решение ставить текстовый курсор справа от него или слева от него.
+    // примерный алгоритм для пересчета положения
+    // я думаю вернуть надо два значения, индекс символа и индекс строки
+    return 0;
+}
 
 bool PlainText::keyboardEvent(int key, int /* scancode */, int action, int modifiers) {
     if (mEditable && focused()) {

@@ -36,7 +36,8 @@ public:
 		text = new PlainText(this, "test\r\n2");
 		text->setFixedSize(nanogui::Vector2i(100, 100));
 		text = new PlainText(this, "test\n3");
-		text->setFixedSize(nanogui::Vector2i(100, 100));
+		text->setFixedSize(nanogui::Vector2i(100, 95));
+		text->setAlignment(PlainText::Alignment::Center);
 
 
 		performLayout();
