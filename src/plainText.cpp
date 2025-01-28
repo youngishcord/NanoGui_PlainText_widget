@@ -58,8 +58,8 @@ void PlainText::draw(NVGcontext* ctx) {
     Vector2i drawPos(mPos.x(), mPos.y() + mSize.y() * 0.5f + 1);
 
     // Этот параметр отвечает за отступы от краев
-    float xSpacing = 5.0f;//mSize.y() * 0.3f;
-    float ySpacing = 5.0f;
+    float xSpacing = 10.0f;//mSize.y() * 0.3f;
+    float ySpacing = 10.0f;
 
     float unitWidth = 0;
 
@@ -68,15 +68,15 @@ void PlainText::draw(NVGcontext* ctx) {
     switch (mAlignment) {
         case Alignment::Left:
             nvgTextAlign(ctx, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-            drawPos.x() += xSpacing + spinArrowsWidth;
+            // drawPos.x() += xSpacing + spinArrowsWidth;
             break;
         case Alignment::Right:
             nvgTextAlign(ctx, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
-            drawPos.x() += mSize.x() - unitWidth - xSpacing;
+            // drawPos.x() += -200; //mSize.x();// - unitWidth - xSpacing; // FIXME: Добавил тут еще -5 поскльку текст съезжал, надо будет разобраться
             break;
         case Alignment::Center:
             nvgTextAlign(ctx, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-            drawPos.x() += mSize.x() * 0.5f;
+            // drawPos.x() += mSize.x() * 0.5f;
             break;
     }
 
@@ -98,7 +98,7 @@ void PlainText::draw(NVGcontext* ctx) {
     drawPos.x() += mTextOffset;
 
     if (mCommitted) {
-        nvgTextBox(ctx, mPos.x()+xSpacing, mPos.y()+10, mSize.x(), 
+        nvgTextBox(ctx, mPos.x()+xSpacing, mPos.y()+ySpacing, mSize.x()-xSpacing*2,
             mValue.empty() ? mPlaceholder.c_str() : mValue.c_str(), nullptr);
         // nvgText(ctx, drawPos.x(), drawPos.y(),
         //     mValue.empty() ? mPlaceholder.c_str() : mValue.c_str(), nullptr);
@@ -107,15 +107,15 @@ void PlainText::draw(NVGcontext* ctx) {
         const int maxGlyphs = 1024;
         NVGglyphPosition glyphs[maxGlyphs];
         float textBound[4];
-        nvgTextBoxBounds(ctx, mPos.x()+xSpacing, mPos.y()+ySpacing, mSize.x()-xSpacing,
+        nvgTextBoxBounds(ctx, mPos.x()+xSpacing, mPos.y()+ySpacing, mSize.x()-xSpacing*2,
             mValueTemp.c_str(), nullptr, textBound);
         // nvgTextBounds(ctx, drawPos.x(), drawPos.y(), mValueTemp.c_str(),
         //               nullptr, textBound);
 
         // Тут считается количество строк, а в переменной rows сохраняются строки.
         NVGtextRow rows[128];
-        int nrows = nvgTextBreakLines(ctx, mValueTemp.c_str(), nullptr, mSize.x()-xSpacing, rows, 128);
-
+        int nrows = nvgTextBreakLines(ctx, mValueTemp.c_str(), nullptr, mSize.x()-xSpacing*2, rows, 128);
+        max_rows = nrows;
 
         // Высота курсора?
         // float lineh = textBound[3] - textBound[1];
@@ -127,17 +127,20 @@ void PlainText::draw(NVGcontext* ctx) {
         // find cursor positions
         // Тут рассчет количества символов и только 
         int nglyphs =
-            nvgTextGlyphPositions(ctx, drawPos.x(), drawPos.y(),
+            nvgTextGlyphPositions(ctx, mPos.x()+xSpacing, mPos.y()+ySpacing,
                                   mValueTemp.c_str(), nullptr, glyphs, maxGlyphs);
         // std::cout << nglyphs << "\n";
 
-        _position2CursorIndex(
-            mMousePos.x(), mMousePos.y(),
-            textBound[2], textBound[3],
-            glyphs, rows,
-            nglyphs, nrows
-        )
-        updateCursor(ctx, textBound[2], glyphs, nglyphs);
+        _updateCursor(ctx, nglyphs, rows, nrows, lineh);
+        // _position2CursorIndex(
+        //     ctx,
+        //     mMousePos.x(), mMousePos.y(),
+        //     textBound,
+        //     /*glyphs,*/ rows,
+        //     nglyphs, nrows, 
+        //     lineh
+        // );
+        // updateCursor(ctx, textBound[2], glyphs, nglyphs);
 
         // compute text offset
         int prevCPos = mCursorPos > 0 ? mCursorPos - 1 : 0;
@@ -154,14 +157,15 @@ void PlainText::draw(NVGcontext* ctx) {
 
         // draw text with offset
         // nvgText(ctx, drawPos.x(), drawPos.y(), mValueTemp.c_str(), nullptr);
-        nvgTextBox(ctx, mPos.x()+xSpacing, mPos.y()+10, mSize.x()-xSpacing, mValueTemp.c_str(), nullptr);
+        nvgTextBox(ctx, mPos.x()+xSpacing, mPos.y()+ySpacing, mSize.x()-xSpacing*2, mValueTemp.c_str(), nullptr);
         // nvgTextBreakLines(ctx,)
         nvgTextBounds(ctx, drawPos.x(), drawPos.y(), mValueTemp.c_str(),
                       nullptr, textBound);
 
         // recompute cursor positions
-        nglyphs = nvgTextGlyphPositions(ctx, drawPos.x(), drawPos.y(),
-                mValueTemp.c_str(), nullptr, glyphs, maxGlyphs);
+        nglyphs = nvgTextGlyphPositions(ctx, mPos.x()+xSpacing, mPos.y()+ySpacing,
+                rows[mCursorRow].start, rows[mCursorRow].end, glyphs, maxGlyphs);
+        max_index = nglyphs;
         
         // std::cout << nglyphs << "\n"; 
 
@@ -170,29 +174,37 @@ void PlainText::draw(NVGcontext* ctx) {
         // }
 
         if (mCursorPos > -1) {
-            if (mSelectionPos > -1) {
-                float caretx = cursorIndex2Position(mCursorPos, textBound[2],
-                                                    glyphs, nglyphs);
-                float selx = cursorIndex2Position(mSelectionPos, textBound[2],
-                                                  glyphs, nglyphs);
+            // if (mSelectionPos > -1) {
+            //     float caretx = cursorIndex2Position(mCursorPos, textBound[2],
+            //                                         glyphs, nglyphs);
+            //     float selx = cursorIndex2Position(mSelectionPos, textBound[2],
+            //                                       glyphs, nglyphs);
 
-                if (caretx > selx)
-                    std::swap(caretx, selx);
+            //     if (caretx > selx)
+            //         std::swap(caretx, selx);
 
-                // draw selection
-                nvgBeginPath(ctx);
-                nvgFillColor(ctx, nvgRGBA(255, 255, 255, 80));
-                nvgRect(ctx, caretx, drawPos.y() - lineh * 0.5f, selx - caretx,
-                        lineh);
-                nvgFill(ctx);
-            }
+            //     // draw selection
+            //     nvgBeginPath(ctx);
+            //     nvgFillColor(ctx, nvgRGBA(255, 255, 255, 80));
+            //     nvgRect(ctx, caretx, drawPos.y() - lineh * 0.5f, selx - caretx,
+            //             lineh);
+            //     nvgFill(ctx);
+            // }
 
-            float caretx = cursorIndex2Position(mCursorPos, textBound[2], glyphs, nglyphs);
+            // float caretx = cursorIndex2Position(mCursorPos, textBound[2], glyphs, nglyphs);
+            float caretx = _cursorIndex2Position(mCursorPos, glyphs, nglyphs);
 
             // draw cursor
             nvgBeginPath(ctx);
-            nvgMoveTo(ctx, caretx, drawPos.y() - lineh * 0.5f);
-            nvgLineTo(ctx, caretx, drawPos.y() + lineh * 0.5f);
+            // nvgMoveTo(ctx, caretx, drawPos.y() - lineh * 0.5f);
+            // nvgLineTo(ctx, caretx, drawPos.y() + lineh * 0.5f);
+
+            std::cout << "drawPos x:" << drawPos.x() << " y:" << drawPos.y();
+            std::cout << " INDEX:" << mCursorPos << " ROW:" << mCursorRow;
+            std::cout << " X:" << caretx << " Y:" << lineh * mCursorRow << " Y2:" << (mCursorRow+1) * lineh << "\n";
+
+            nvgMoveTo(ctx, caretx, mPos.y() + (mCursorRow * lineh));
+            nvgLineTo(ctx, caretx, mPos.y() + ((mCursorRow+1) * lineh));
             nvgStrokeColor(ctx, nvgRGBA(255, 192, 0, 255));
             nvgStrokeWidth(ctx, 1.0f);
             nvgStroke(ctx);
@@ -201,13 +213,57 @@ void PlainText::draw(NVGcontext* ctx) {
     nvgRestore(ctx);
 }
 
+void PlainText::_updateCursor(NVGcontext *ctx, int size, NVGtextRow *rows, int nRows, float lineh) {
+    // handle mouse cursor events
+    if (mMouseDownPos.x() != -1) {
+        if (mMouseDownModifier == GLFW_MOD_SHIFT) {
+            if (mSelectionPos == -1)
+                mSelectionPos = mCursorPos;
+        } else
+            mSelectionPos = -1;
+
+        _position2CursorIndex(ctx, mMousePos.x(), mMousePos.y(), textBound, rows, size, nRows, lineh);
+        // mCursorPos =
+        //     position2CursorIndex(mMouseDownPos.x(), lastx, glyphs, size);
+
+        mMouseDownPos = Vector2i(-1, -1);
+    } else if (mMouseDragPos.x() != -1) {
+        if (mSelectionPos == -1)
+            mSelectionPos = mCursorPos;
+
+        _position2CursorIndex(ctx, mMousePos.x(), mMousePos.y(), textBound, rows, size, nRows, lineh);
+
+        // mCursorPos =
+        //     position2CursorIndex(mMouseDragPos.x(), lastx, glyphs, size);
+    } else {
+        // set cursor to last character
+        if (mCursorPos == -2)
+            mCursorPos = size;
+    }
+
+    if (mCursorPos == mSelectionPos)
+        mSelectionPos = -1;
+}
+
+float PlainText::_cursorIndex2Position(int index, const NVGglyphPosition *glyphs, int nglyphs) {
+    float pos = 0;
+    if (index == nglyphs)
+        pos = glyphs[nglyphs].x; // last character
+    else
+        pos = glyphs[index].x;
+
+    return pos;
+}
+
 // Функция пересчета мирового положения в индексы текста для отрисовки курсора и т.д..
 int PlainText::_position2CursorIndex(
+    NVGcontext *ctx,
     float posX, float posY, // Позиция мыши или другого источника
-    float lastX, float lastY, // Координаты границы отрисовки
-    const NVGglyphPosition *glyphs, // Набор символов
+    float *textBound, // Координаты границы отрисовки
+    // const NVGglyphPosition *glyphs, // Набор символов не нужен
     const NVGtextRow *rows, // Набор строк
-    int size, int nRows // Размер текста и количество строк.
+    int size, int nRows, // Размер текста и количество строк.
+    float lineh
     ) 
 {
     // я думаю, что тут мы считаем находится ли курсор в области по оси X 
@@ -217,6 +273,78 @@ int PlainText::_position2CursorIndex(
     // начинам перебирать символы, пока не найдем более близкий и потом принимаем решение ставить текстовый курсор справа от него или слева от него.
     // примерный алгоритм для пересчета положения
     // я думаю вернуть надо два значения, индекс символа и индекс строки
+
+    // std::cout << "mouse: " << posX << " - " << posY;
+    // std::cout << ", lineh: " << lineh;
+    // std::cout << ", textbound: " << textBound[0] << " - " << textBound[1];
+    // std::cout << "\n";
+    
+
+    int row_index = (int)((posY - textBound[1]) / lineh); // Просто и лаконично 
+    if (row_index > nRows-1) return -1; // пусть пока что так
+    // std::cout << ", index: " << row_index << "; ";
+
+
+    // std::cout << ", min: " << rows[index].minx << ", max: " << rows[index].maxx;
+
+    float x_buff = 0;
+    switch (mAlignment) // Надо поправить
+    {
+    case Alignment::Left:
+        x_buff = 10.0f;
+        break;
+    case Alignment::Center:
+        x_buff = mSize.x()/2-5;
+        break;
+    case Alignment::Right:
+        x_buff = mSize.x()-15;
+        break;
+    default:
+        break;
+    }
+
+    // Я хочу перегнать определенную строку в массив структур чтобы определить положение курсора
+    const int maxGlyphs = 1024;
+    NVGglyphPosition glyphs[maxGlyphs];
+    int nglyphs = 
+        nvgTextGlyphPositions(ctx, mPos.x()+x_buff, mPos.y()+10, // Надо разобраться с положениями
+                                rows[row_index].start, rows[row_index].end, glyphs, maxGlyphs);
+
+
+    int mCursorId = 0;
+    float caretx = glyphs[mCursorId].x;
+    for (int i = 1; i < nglyphs; i++) {
+        // std::cout << glyphs[i].x << ",";
+        if (std::abs(caretx - posX) > std::abs(glyphs[i].x - posX)) {
+            mCursorId = i;
+            caretx = glyphs[mCursorId].x;
+        }
+    }
+    if (std::abs(caretx - posX) > std::abs(textBound[2] - posX)) 
+        mCursorId = nglyphs;
+
+    // std::cout << "result index" << mCursorId << ",";
+    
+
+    // if (posX < rows[index].minx) {
+    // }
+    // if (posX > rows[index].maxx) {
+    //     std::cout << ", max>: " << index;
+    // }
+    // std::cout << "\n";
+
+    mCursorPos = mCursorId;
+    mCursorRow = row_index;
+
+    // for (int i = 0; i < nRows; i++) {
+    //     if (abs(posY - (textBound[1] + (lineh+5) * i)) < lineh) {
+    //         std::cout << "text" << i << "\n";
+    //     }
+
+    // }
+    // std::cout << "положение мыши: " << posX << " - " << posY << "\n";
+    
+
     return 0;
 }
 
@@ -231,8 +359,12 @@ bool PlainText::keyboardEvent(int key, int /* scancode */, int action, int modif
                     mSelectionPos = -1;
                 }
 
-                if (mCursorPos > 0)
+                if (mCursorPos > 0) {
                     mCursorPos--;
+                } else if (mCursorRow > 0) {
+                    mCursorRow--;
+                    mCursorPos = 0; // FIXME: Тут надо пересчитать количество символов на предыдущей строке и ставить это значение
+                }
             } else if (key == GLFW_KEY_RIGHT) {
                 if (modifiers == GLFW_MOD_SHIFT) {
                     if (mSelectionPos == -1)
@@ -241,8 +373,25 @@ bool PlainText::keyboardEvent(int key, int /* scancode */, int action, int modif
                     mSelectionPos = -1;
                 }
 
-                if (mCursorPos < (int) mValueTemp.length())
+                // Тут срочно нужна проверка на максимальное значение в строке и перемещение курсора к последнему символу
+                if (mCursorPos < max_index) {
                     mCursorPos++;
+                } else if (mCursorRow < max_rows-1) {
+                    mCursorRow++;
+                    mCursorPos = 0;
+                }
+            } else if (key == GLFW_KEY_UP) {
+                // Тут надо доработать селект строк
+                mSelectionPos = -1;
+                if (mCursorRow > 0) {
+                    mCursorRow--;
+                }
+            } else if (key == GLFW_KEY_DOWN) {
+                // Тут надо доработать селект строк
+                mSelectionPos = -1;
+                if (mCursorRow < max_rows-1) {
+                    mCursorRow++;
+                }
             } else if (key == GLFW_KEY_HOME) {
                 if (modifiers == GLFW_MOD_SHIFT) {
                     if (mSelectionPos == -1)
@@ -276,6 +425,7 @@ bool PlainText::keyboardEvent(int key, int /* scancode */, int action, int modif
             } else if (key == GLFW_KEY_ENTER) {
                 mValueTemp.insert(mCursorPos, "\n");
                 mCursorPos++;
+                mCursorRow++;
                 // if (!mCommitted)
                 //     focusEvent(false);
             } else if (key == GLFW_KEY_A && modifiers == SYSTEM_COMMAND_MOD) {

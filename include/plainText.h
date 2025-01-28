@@ -21,9 +21,18 @@ public:
     
     virtual bool keyboardEvent(int key, int /*scancode*/, int action, int modifiers) override;
 
-    virtual int _position2CursorIndex(float posX, float posY, float lastX, float lastY, 
-        const NVGglyphPosition *glyphs, const NVGtextRow *rows, int size, int nRows); // override;
+    virtual int _position2CursorIndex(NVGcontext *ctx, float posX, float posY, float *textBound, 
+        /*const NVGglyphPosition *glyphs,*/ const NVGtextRow *rows, int size, int nRows, float lineh); // override;
+
+    virtual void _updateCursor(NVGcontext *ctx, int size, NVGtextRow *rows, int nRows, float lineh);
+
+    virtual float _cursorIndex2Position(int index, const NVGglyphPosition *glyphs, int size);
     
+protected:
+    int mCursorRow = 0;
+    float textBound[4];
+    int max_rows = 0;
+    int max_index = 0;
 };
 
 #endif // PLAINTEXT

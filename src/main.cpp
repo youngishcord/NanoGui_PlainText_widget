@@ -26,6 +26,7 @@ public:
 		nanogui::TextBox *tb = new nanogui::TextBox(this, "test textbox");
 		tb->setEditable(true);
 		tb->setFixedSize(nanogui::Vector2i(100, 100));
+		tb->setAlignment(PlainText::Alignment::Right);
 		// tb->setSpinnable(true);
 		// nanogui::IntBox<int> *itb = new nanogui::IntBox<int>(this, 1);
 		// itb->setEditable(true);
@@ -35,9 +36,10 @@ public:
 		text->setFixedSize(nanogui::Vector2i(100, 100));
 		text = new PlainText(this, "test\r\n2");
 		text->setFixedSize(nanogui::Vector2i(100, 100));
-		text = new PlainText(this, "test\n3");
-		text->setFixedSize(nanogui::Vector2i(100, 95));
 		text->setAlignment(PlainText::Alignment::Center);
+		text = new PlainText(this, "test\n3");
+		text->setFixedSize(nanogui::Vector2i(100, 100));
+		text->setAlignment(PlainText::Alignment::Right);
 
 
 		performLayout();
