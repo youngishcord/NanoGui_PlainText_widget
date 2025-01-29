@@ -28,11 +28,20 @@ public:
 
     virtual float _cursorIndex2Position(int index, const NVGglyphPosition *glyphs, int size);
     
+    void updateRowText();
+
 protected:
     int mCursorRow = 0;
     float textBound[4];
     int max_rows = 0;
     int max_index = 0;
+
+    const int maxGlyphs = 1024;
+    const int maxRows = 128;
+
+    NVGcontext *ctx;
+    NVGtextRow splited_text[128]; // Не дает использовать переменные
+    NVGglyphPosition row_text[1024];
 };
 
 #endif // PLAINTEXT

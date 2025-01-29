@@ -21,6 +21,7 @@ PlainText::PlainText(Widget *parent, const std::string &value)
 
 
 void PlainText::draw(NVGcontext* ctx) {
+    this->ctx = ctx;
     Widget::draw(ctx);
 
     NVGpaint bg = nvgBoxGradient(ctx,
@@ -117,6 +118,8 @@ void PlainText::draw(NVGcontext* ctx) {
         int nrows = nvgTextBreakLines(ctx, mValueTemp.c_str(), nullptr, mSize.x()-xSpacing*2, rows, 128);
         max_rows = nrows;
 
+        nvgTextBreakLines(ctx, mValueTemp.c_str(), nullptr, mSize.x()-xSpacing*2, splited_text, 128);
+
         // Высота курсора?
         // float lineh = textBound[3] - textBound[1];
         // float lineh = 20.0f;
@@ -164,8 +167,9 @@ void PlainText::draw(NVGcontext* ctx) {
 
         // recompute cursor positions
         nglyphs = nvgTextGlyphPositions(ctx, mPos.x()+xSpacing, mPos.y()+ySpacing,
-                rows[mCursorRow].start, rows[mCursorRow].end, glyphs, maxGlyphs);
+                splited_text[mCursorRow].start, splited_text[mCursorRow].end, glyphs, maxGlyphs);
         max_index = nglyphs;
+        updateRowText();
         
         // std::cout << nglyphs << "\n"; 
 
@@ -190,6 +194,10 @@ void PlainText::draw(NVGcontext* ctx) {
             //             lineh);
             //     nvgFill(ctx);
             // }
+
+            for (int i = 0; i < nglyphs; i++) {
+                std::cout << glyphs[i].x << ",";
+            }
 
             // float caretx = cursorIndex2Position(mCursorPos, textBound[2], glyphs, nglyphs);
             float caretx = _cursorIndex2Position(mCursorPos, glyphs, nglyphs);
@@ -245,10 +253,14 @@ void PlainText::_updateCursor(NVGcontext *ctx, int size, NVGtextRow *rows, int n
         mSelectionPos = -1;
 }
 
+void PlainText::updateRowText() {
+    max_index = nvgTextGlyphPositions(ctx, mPos.x(), mPos.y(), splited_text[mCursorRow].start, splited_text[mCursorRow].end, row_text, maxGlyphs);
+}
+
 float PlainText::_cursorIndex2Position(int index, const NVGglyphPosition *glyphs, int nglyphs) {
     float pos = 0;
     if (index == nglyphs)
-        pos = glyphs[nglyphs].x; // last character
+        pos = glyphs[nglyphs-1].maxx; // last character
     else
         pos = glyphs[index].x;
 
@@ -363,7 +375,8 @@ bool PlainText::keyboardEvent(int key, int /* scancode */, int action, int modif
                     mCursorPos--;
                 } else if (mCursorRow > 0) {
                     mCursorRow--;
-                    mCursorPos = 0; // FIXME: Тут надо пересчитать количество символов на предыдущей строке и ставить это значение
+                    updateRowText();
+                    mCursorPos = max_index; // FIXME: Тут надо пересчитать количество символов на предыдущей строке и ставить это значение
                 }
             } else if (key == GLFW_KEY_RIGHT) {
                 if (modifiers == GLFW_MOD_SHIFT) {
@@ -424,8 +437,10 @@ bool PlainText::keyboardEvent(int key, int /* scancode */, int action, int modif
                 }
             } else if (key == GLFW_KEY_ENTER) {
                 mValueTemp.insert(mCursorPos, "\n");
-                mCursorPos++;
+                // mCursorPos++;
                 mCursorRow++;
+                updateRowText();
+                mCursorPos = 0;
                 // if (!mCommitted)
                 //     focusEvent(false);
             } else if (key == GLFW_KEY_A && modifiers == SYSTEM_COMMAND_MOD) {
