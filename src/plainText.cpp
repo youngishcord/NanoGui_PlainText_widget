@@ -17,6 +17,9 @@ PlainText::PlainText(Widget *parent, const std::string &value)
 
     // В базе всегда левый текст
     setAlignment(PlainText::Alignment::Left);
+
+    // Пока что оставлю просто 0
+    cursor.textIndex = 0;
 }
 
 
@@ -196,7 +199,7 @@ void PlainText::draw(NVGcontext* ctx) {
             // }
 
             for (int i = 0; i < nglyphs; i++) {
-                std::cout << glyphs[i].x << ",";
+                std::cout << glyphs[i].str << ",";
             }
 
             // float caretx = cursorIndex2Position(mCursorPos, textBound[2], glyphs, nglyphs);
@@ -207,7 +210,8 @@ void PlainText::draw(NVGcontext* ctx) {
             // nvgMoveTo(ctx, caretx, drawPos.y() - lineh * 0.5f);
             // nvgLineTo(ctx, caretx, drawPos.y() + lineh * 0.5f);
 
-            std::cout << "drawPos x:" << drawPos.x() << " y:" << drawPos.y();
+            std::cout << "textIndex: " << cursor.textIndex;
+            std::cout << " drawPos x:" << drawPos.x() << " y:" << drawPos.y();
             std::cout << " INDEX:" << mCursorPos << " ROW:" << mCursorRow;
             std::cout << " X:" << caretx << " Y:" << lineh * mCursorRow << " Y2:" << (mCursorRow+1) * lineh << "\n";
 
@@ -373,10 +377,12 @@ bool PlainText::keyboardEvent(int key, int /* scancode */, int action, int modif
 
                 if (mCursorPos > 0) {
                     mCursorPos--;
+                    cursor.textIndex--;
                 } else if (mCursorRow > 0) {
                     mCursorRow--;
                     updateRowText();
                     mCursorPos = max_index; // FIXME: Тут надо пересчитать количество символов на предыдущей строке и ставить это значение
+                    cursor.textIndex--;
                 }
             } else if (key == GLFW_KEY_RIGHT) {
                 if (modifiers == GLFW_MOD_SHIFT) {
@@ -389,21 +395,31 @@ bool PlainText::keyboardEvent(int key, int /* scancode */, int action, int modif
                 // Тут срочно нужна проверка на максимальное значение в строке и перемещение курсора к последнему символу
                 if (mCursorPos < max_index) {
                     mCursorPos++;
+                    cursor.textIndex++;
                 } else if (mCursorRow < max_rows-1) {
                     mCursorRow++;
                     mCursorPos = 0;
+                    cursor.textIndex++;
                 }
             } else if (key == GLFW_KEY_UP) {
                 // Тут надо доработать селект строк
                 mSelectionPos = -1;
                 if (mCursorRow > 0) {
                     mCursorRow--;
+                    updateRowText();
+                    if (mCursorPos > max_index) {
+                        mCursorPos = max_index;
+                    }
                 }
             } else if (key == GLFW_KEY_DOWN) {
                 // Тут надо доработать селект строк
                 mSelectionPos = -1;
                 if (mCursorRow < max_rows-1) {
                     mCursorRow++;
+                    updateRowText();
+                    if (mCursorPos > max_index) {
+                        mCursorPos = max_index;
+                    }
                 }
             } else if (key == GLFW_KEY_HOME) {
                 if (modifiers == GLFW_MOD_SHIFT) {
@@ -425,20 +441,22 @@ bool PlainText::keyboardEvent(int key, int /* scancode */, int action, int modif
                 mCursorPos = (int) mValueTemp.size();
             } else if (key == GLFW_KEY_BACKSPACE) {
                 if (!deleteSelection()) {
-                    if (mCursorPos > 0) {
-                        mValueTemp.erase(mValueTemp.begin() + mCursorPos - 1);
+                    if (cursor.textIndex > 0) {
+                        mValueTemp.erase(mValueTemp.begin() + cursor.textIndex - 1);
                         mCursorPos--;
+                        cursor.textIndex--;
                     }
                 }
             } else if (key == GLFW_KEY_DELETE) {
                 if (!deleteSelection()) {
-                    if (mCursorPos < (int) mValueTemp.length())
-                        mValueTemp.erase(mValueTemp.begin() + mCursorPos);
+                    if (cursor.textIndex < (int) mValueTemp.length())
+                        mValueTemp.erase(mValueTemp.begin() + cursor.textIndex);
                 }
             } else if (key == GLFW_KEY_ENTER) {
-                mValueTemp.insert(mCursorPos, "\n");
+                mValueTemp.insert(cursor.textIndex, "\n");
                 // mCursorPos++;
                 mCursorRow++;
+                cursor.textIndex++;
                 updateRowText();
                 mCursorPos = 0;
                 // if (!mCommitted)
@@ -459,6 +477,24 @@ bool PlainText::keyboardEvent(int key, int /* scancode */, int action, int modif
             mValidFormat =
                 (mValueTemp == "") || checkFormat(mValueTemp, mFormat);
         }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool PlainText::keyboardCharacterEvent(unsigned int codepoint) {
+    if (mEditable && focused()) {
+        std::ostringstream convert;
+        convert << (char) codepoint;
+
+        deleteSelection();
+        mValueTemp.insert(cursor.textIndex, convert.str());
+        mCursorPos++;
+        cursor.textIndex++;
+
+        mValidFormat = (mValueTemp == "") || checkFormat(mValueTemp, mFormat);
 
         return true;
     }

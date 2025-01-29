@@ -15,11 +15,18 @@ using namespace nanogui;
 
 class PlainText : public TextBox {
 public:
+    struct Cursor {
+        int row, index, textIndex;
+        float posX, posY;
+
+    };
+
     PlainText(Widget *parent, const std::string &value = "Untitled");
 
     virtual void draw(NVGcontext *ctx) override;
     
     virtual bool keyboardEvent(int key, int /*scancode*/, int action, int modifiers) override;
+    virtual bool keyboardCharacterEvent(unsigned int codepoint) override;
 
     virtual int _position2CursorIndex(NVGcontext *ctx, float posX, float posY, float *textBound, 
         /*const NVGglyphPosition *glyphs,*/ const NVGtextRow *rows, int size, int nRows, float lineh); // override;
@@ -38,6 +45,8 @@ protected:
 
     const int maxGlyphs = 1024;
     const int maxRows = 128;
+
+    Cursor cursor;
 
     NVGcontext *ctx;
     NVGtextRow splited_text[128]; // Не дает использовать переменные

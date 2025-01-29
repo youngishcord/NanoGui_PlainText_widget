@@ -9,7 +9,7 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 20)
 
 # Disable building extras we won't need (pure C++ project)
-set(NANOGUI_BUILD_EXAMPLE OFF CACHE BOOL " " FORCE)
+set(NANOGUI_BUILD_EXAMPLE ON CACHE BOOL " " FORCE)
 set(NANOGUI_BUILD_PYTHON  OFF CACHE BOOL " " FORCE)
 set(NANOGUI_INSTALL       OFF CACHE BOOL " " FORCE)
 set(NANOGUI_BUILD_SHARED  OFF CACHE BOOL " " FORCE)
@@ -49,6 +49,7 @@ include_directories(${NANOGUI_EXTRA_INCS})
 set(SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/plainText.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plaintext2.cpp
 )
 
 # Include/
@@ -56,6 +57,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set(HEADER_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/plainText.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/plaintext2.h
 )
 
 # Compile a target using NanoGUI

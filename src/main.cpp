@@ -1,3 +1,52 @@
+// #include <nanogui/nanogui.h>
+
+// using namespace nanogui;
+
+// class MyApp : public Screen {
+// public:
+//     MyApp() : Screen(Vector2i(500, 500), "NanoGUI Example") {
+//         // Основной виджет вместо окна
+//         Widget *mainWidget = new Widget(this);
+//         mainWidget->setLayout(new BoxLayout(Orientation::Vertical, Alignment::Fill, 10, 10));
+
+//         // Кнопка сверху
+//         Button *mainButton = new Button(mainWidget, "Main Button");
+//         mainButton->setCallback([] { std::cout << "Main Button Clicked!" << std::endl; });
+
+//         // Прокручиваемая панель
+//         VScrollPanel *scrollPanel = new VScrollPanel(mainWidget);
+//         scrollPanel->setFixedHeight(300); // Ограничиваем высоту панели
+
+//         // Внутренний контейнер для кнопок
+//         Widget *buttonContainer = new Widget(scrollPanel);
+//         buttonContainer->setLayout(new BoxLayout(Orientation::Vertical, Alignment::Fill, 5, 5));
+
+//         // Добавляем кнопки
+//         for (int i = 0; i < 20; ++i) {
+//             Button *btn = new Button(buttonContainer, "Button " + std::to_string(i + 1));
+//             btn->setCallback([i] { std::cout << "Button " << (i + 1) << " Clicked!" << std::endl; });
+//         }
+
+//         performLayout();
+//     }
+// };
+
+// int main() {
+//     nanogui::init();
+
+//     {
+//         nanogui::ref<MyApp> app = new MyApp();
+//         app->drawAll();
+//         app->setVisible(true);
+//         nanogui::mainloop();
+//     }
+
+//     nanogui::shutdown();
+//     return 0;
+// }
+
+
+
 #include <stdio.h>
 #include <iostream>
 
@@ -7,7 +56,7 @@
 #include <nanogui/window.h>
 
 #include <plainText.h>
-
+#include <plaintext2.h>
 
 class MainApp : public nanogui::Screen {
 public:
@@ -32,15 +81,18 @@ public:
 		// itb->setEditable(true);
 		// itb->setSpinnable(true);
 
-		PlainText *text = new PlainText(this, "test\n2");
-		text->setFixedSize(nanogui::Vector2i(100, 100));
-		text = new PlainText(this, "test\r\n2");
-		text->setFixedSize(nanogui::Vector2i(100, 100));
-		text->setAlignment(PlainText::Alignment::Center);
-		text = new PlainText(this, "test\n3");
-		text->setFixedSize(nanogui::Vector2i(100, 100));
-		text->setAlignment(PlainText::Alignment::Right);
+		// Старый вариант с наследованием
+		// PlainText *text = new PlainText(this, "test\n2");
+		// text->setFixedSize(nanogui::Vector2i(100, 100));
+		// text = new PlainText(this, "test\r\n2");
+		// text->setFixedSize(nanogui::Vector2i(100, 100));
+		// text->setAlignment(PlainText::Alignment::Center);
+		// text = new PlainText(this, "test\n3");
+		// text->setFixedSize(nanogui::Vector2i(100, 100));
+		// text->setAlignment(PlainText::Alignment::Right);
 
+		PlainText2 *text = new PlainText2(this, "Text\ntext");
+		text->setFixedSize(nanogui::Vector2i(100, 100));
 
 		performLayout();
 		resizeEvent(this->size());
