@@ -59,15 +59,16 @@ bool PlainText2::keyboardEvent(int key, int scancode, int action, int modifiers)
 
 bool PlainText2::keyboardCharacterEvent(unsigned int codepoint) {
 	std::cout << "plaitext keyboardCharacterEvent\n";
-	// Widget::keyboardCharacterEvent(codepoint);
-	std::ostringstream convert;
-	convert << (char) codepoint;
-	textArea->text.append(convert.str());
+	if (mFocused) {
+		if (textArea->keyboardCharacterEvent(codepoint))
+			return true;
+	}
 	return false;
 }
 
 
 bool TextAreaWidget::mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) {
+	Widget::mouseButtonEvent(p, button, down, modifiers);
 	// std::cout << "click!\n";
 	if (button == GLFW_MOUSE_BUTTON_1 && down) {
 		std::cout << p.x() << ", " << p.y() << "\n";
@@ -77,7 +78,11 @@ bool TextAreaWidget::mouseButtonEvent(const Vector2i &p, int button, bool down, 
 
 bool TextAreaWidget::keyboardCharacterEvent(unsigned int codepoint) {
 	std::cout << "caracter event\n";
-	return false;
+	std::ostringstream convert;
+	convert << (char) codepoint;
+	text.append(convert.str());
+	return true;
+	// return false;
 }
 
 bool TextAreaWidget::keyboardEvent(int key, int scancode, int action, int modifiers) {

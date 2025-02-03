@@ -44,14 +44,22 @@ public:
         nvgFontSize(ctx, fontSize());
         nvgFontFace(ctx, "sans");
         nvgTextAlign(ctx, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-        // nvgTextAlign(ctx, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-        // nvgTextAlign(ctx, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
-        NVGtextRow rows[1024];
-        int lines = nvgTextBreakLines(ctx, text.c_str(), nullptr, 300.0f-10, rows, 1024);
 
-        for (int i = 0; i < lines; i++) {
-            nvgText(ctx, mPos.x(), mPos.y()+10+20*i, rows[i].start, rows[i].end);
-            drawTestRect(ctx, mPos.x(), mPos.y()+20*i, 300-10, 20);
+        float lineh; // Высота строки для дальнейшего рисования текста и курсора
+        nvgTextMetrics(ctx, nullptr, nullptr, &lineh);
+
+        if (focused()) {
+            // nvgTextAlign(ctx, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+            // nvgTextAlign(ctx, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
+            NVGtextRow rows[1024];
+            int lines = nvgTextBreakLines(ctx, text.c_str(), nullptr, 300.0f-10, rows, 1024);
+
+            for (int i = 0; i < lines; i++) {
+                nvgText(ctx, mPos.x(), mPos.y()+10+lineh*i, rows[i].start, rows[i].end);
+                drawTestRect(ctx, mPos.x(), mPos.y()+lineh*i, 300-10, lineh);
+            }
+        } else {
+            nvgTextBox(ctx, mPos.x(), mPos.y()+10, 300-10, text.c_str(), nullptr);
         }
     }
 
@@ -70,7 +78,7 @@ public:
     virtual bool mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) override;
     virtual bool keyboardCharacterEvent(unsigned int codepoint) override;
 
-public:
+protected:
     std::string text = "Of course we can still daisy chain cubic Bézier "
         "curves by adding another curve to our path. Lets add the second pair "
         "of quadratic curves as a single cubic curve to our current path:";
