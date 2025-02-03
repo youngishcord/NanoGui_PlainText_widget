@@ -92,7 +92,7 @@ public:
 		// text->setAlignment(PlainText::Alignment::Right);
 
 		PlainText2 *text = new PlainText2(this, "Text\ntext");
-		text->setFixedSize(nanogui::Vector2i(100, 100));
+		text->setFixedSize(nanogui::Vector2i(300, 300));
 
 		performLayout();
 		resizeEvent(this->size());

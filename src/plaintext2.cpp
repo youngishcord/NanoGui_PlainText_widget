@@ -6,58 +6,64 @@
 #include <nanogui/nanogui.h>
 
 
+
 PlainText2::PlainText2(Widget *parent, const std::string &text) 
 	: Widget(parent)
 	, text(text) {
 	vscroll = new VScrollPanel(this);
-	vscroll->setFixedSize(nanogui::Vector2i(100, 100));
-	// vscroll->setFixedSize(this->size()); // Не работает поскольку размер задается после работы конструктора
+	vscroll->setFixedSize(nanogui::Vector2i(300, 300));
 
-	// vscroll should only have *ONE* child. this is what `wrapper` is for
-	auto wrapper = new Widget(vscroll);
-	// wrapper->setFixedSize(size());
-	wrapper->setLayout(new GridLayout());// defaults: 2 columns
-	// vscroll = new VScrollPanel(this);
-	// vscroll->setFixedSize(size());
+	Widget *wrapper = new Widget(vscroll);
+	wrapper->setLayout(new BoxLayout(Orientation::Vertical));
+
+	// wrapper->setFixedSize(nanogui::Vector2i(300 ,300));
 	
-	// Widget *wrapper = new Widget(vscroll);
-	// wrapper->setFixedSize(size());
-	// wrapper->setLayout(new BoxLayout(Orientation::Vertical));
+	TextAreaWidget* textArea = new TextAreaWidget(wrapper);
+	textArea->setFixedWidth(300); // Обязательно надо указывать ширину, иначе она нулевая
+	textArea->setFixedHeight(1000);
 
-	Button *bt;
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
-	bt = new Button(wrapper, "te");
+	// Button *bt;
+	// bt = new Button(wrapper, "te");
+	// bt->setFixedHeight(200);
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
+	// bt = new Button(wrapper, "te");
 
 }
 
 void PlainText2::draw(NVGcontext *ctx) {
 	Widget::draw(ctx);
+
+	// nvgBeginPath(ctx);
+	// nvgRect(ctx, mPos.x(), mPos.y(), 20, 20);
+	// nvgStrokeColor(ctx, Color(255, 0, 0, 255));
+	// nvgStrokeWidth(ctx, 2);
+	// nvgStroke(ctx);
+	// nvgClosePath(ctx);
 
 	NVGpaint bg = nvgBoxGradient(ctx,
         mPos.x(), mPos.y(), mSize.x(), mSize.y(),
