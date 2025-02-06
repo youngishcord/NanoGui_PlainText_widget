@@ -52,13 +52,16 @@ void PlainText2::draw(NVGcontext *ctx) {
 }
 
 bool PlainText2::keyboardEvent(int key, int scancode, int action, int modifiers) {
-	std::cout << "plaitext keyboardEvent\n";
-	// Widget::keyboardEvent(key, scancode, action, modifiers);
+	// std::cout << "plaitext keyboardEvent\n";
+	if (mFocused) {
+		if (textArea->keyboardEvent(key, scancode, action, modifiers))
+			return true;
+	}
 	return false;
 }
 
 bool PlainText2::keyboardCharacterEvent(unsigned int codepoint) {
-	std::cout << "plaitext keyboardCharacterEvent\n";
+	// std::cout << "plaitext keyboardCharacterEvent\n";
 	if (mFocused) {
 		if (textArea->keyboardCharacterEvent(codepoint))
 			return true;
@@ -73,6 +76,7 @@ bool TextAreaWidget::mouseButtonEvent(const Vector2i &p, int button, bool down, 
 	if (button == GLFW_MOUSE_BUTTON_1 && down) {
 		std::cout << p.x() << ", " << p.y() << "\n";
 	}
+
 	return false;
 }
 
@@ -87,125 +91,73 @@ bool TextAreaWidget::keyboardCharacterEvent(unsigned int codepoint) {
 
 bool TextAreaWidget::keyboardEvent(int key, int scancode, int action, int modifiers) {
 	// Widget::keyboardEvent(key, scancode, action, modifiers);
-	std::cout << "keyboard event\n";
-	// text.append()
+	// std::cout << "keyboard event\n";
+	if (mEditable && focused()) {
+        if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+            if (key == GLFW_KEY_LEFT) { // Стрелка влево
+                if (textCursor.index > 0) {
+                    textCursor.index--;
+                } else if (textCursor.row > 0) {
+                    textCursor.row--;
+                    // Тут надо как то перекидывать курсор в конец строки
+                    textCursor.index = MAXINT;
+                }
+                return true;
+            } else if (key == GLFW_KEY_RIGHT) { // Стрелка вправо
+                if (textCursor.index < textBlock.indexes) {
+                    textCursor.index++;
+                } else if (textCursor.row < textBlock.rows-1) {
+                    textCursor.row++;
+                    textCursor.index = 0;
+                }
+                return true;
+            } else if (key == GLFW_KEY_UP) { // Стрелка вверх
+                if (textCursor.row > 0) {
+                    textCursor.row--;
+                } else {
+                    textCursor.index = 0;
+                }
+                return true;
+            } else if (key == GLFW_KEY_DOWN) { // Стрелка вниз
+                if (textCursor.row < textBlock.rows-1) {
+                    textCursor.row++;
+                } else {
+                    textCursor.index = textBlock.indexes;
+                }
+                return true;
+            }
+        }
+    }
 	return false;
 }
-    // if (mEditable && focused()) {
-    //     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-    //         if (key == GLFW_KEY_LEFT) {
-    //             if (modifiers == GLFW_MOD_SHIFT) {
-    //                 if (mSelectionPos == -1)
-    //                     mSelectionPos = mCursorPos;
-    //             } else {
-    //                 mSelectionPos = -1;
-    //             }
 
-    //             if (mCursorPos > 0) {
-    //                 mCursorPos--;
-    //                 cursor.textIndex--;
-    //             } else if (mCursorRow > 0) {
-    //                 mCursorRow--;
-    //                 updateRowText();
-    //                 mCursorPos = max_index; // FIXME: Тут надо пересчитать количество символов на предыдущей строке и ставить это значение
-    //                 cursor.textIndex--;
-    //             }
-    //         } else if (key == GLFW_KEY_RIGHT) {
-    //             if (modifiers == GLFW_MOD_SHIFT) {
-    //                 if (mSelectionPos == -1)
-    //                     mSelectionPos = mCursorPos;
-    //             } else {
-    //                 mSelectionPos = -1;
-    //             }
+// Метод для обновления положения курсора в
+// void TextAreaWidget::updateCursor()
 
-    //             // Тут срочно нужна проверка на максимальное значение в строке и перемещение курсора к последнему символу
-    //             if (mCursorPos < max_index) {
-    //                 mCursorPos++;
-    //                 cursor.textIndex++;
-    //             } else if (mCursorRow < max_rows-1) {
-    //                 mCursorRow++;
-    //                 mCursorPos = 0;
-    //                 cursor.textIndex++;
-    //             }
-    //         } else if (key == GLFW_KEY_UP) {
-    //             // Тут надо доработать селект строк
-    //             mSelectionPos = -1;
-    //             if (mCursorRow > 0) {
-    //                 mCursorRow--;
-    //                 updateRowText();
-    //                 if (mCursorPos > max_index) {
-    //                     mCursorPos = max_index;
-    //                 }
-    //             }
-    //         } else if (key == GLFW_KEY_DOWN) {
-    //             // Тут надо доработать селект строк
-    //             mSelectionPos = -1;
-    //             if (mCursorRow < max_rows-1) {
-    //                 mCursorRow++;
-    //                 updateRowText();
-    //                 if (mCursorPos > max_index) {
-    //                     mCursorPos = max_index;
-    //                 }
-    //             }
-    //         } else if (key == GLFW_KEY_HOME) {
-    //             if (modifiers == GLFW_MOD_SHIFT) {
-    //                 if (mSelectionPos == -1)
-    //                     mSelectionPos = mCursorPos;
-    //             } else {
-    //                 mSelectionPos = -1;
-    //             }
+int TextAreaWidget::position2CursorIndex(NVGcontext *ctx, float posX, float posY, float *textBound, 
+    const NVGtextRow *rows, int size, int nRows, float lineh) 
+{
+    textCursor.row = (int)((posY - textBound[1]) / lineh);
 
-    //             mCursorPos = 0;
-    //         } else if (key == GLFW_KEY_END) {
-    //             if (modifiers == GLFW_MOD_SHIFT) {
-    //                 if (mSelectionPos == -1)
-    //                     mSelectionPos = mCursorPos;
-    //             } else {
-    //                 mSelectionPos = -1;
-    //             }
+    // Тут надо делать поправку на выравнивание текста но это позже
 
-    //             mCursorPos = (int) mValueTemp.size();
-    //         } else if (key == GLFW_KEY_BACKSPACE) {
-    //             if (!deleteSelection()) {
-    //                 if (cursor.textIndex > 0) {
-    //                     mValueTemp.erase(mValueTemp.begin() + cursor.textIndex - 1);
-    //                     mCursorPos--;
-    //                     cursor.textIndex--;
-    //                 }
-    //             }
-    //         } else if (key == GLFW_KEY_DELETE) {
-    //             if (!deleteSelection()) {
-    //                 if (cursor.textIndex < (int) mValueTemp.length())
-    //                     mValueTemp.erase(mValueTemp.begin() + cursor.textIndex);
-    //             }
-    //         } else if (key == GLFW_KEY_ENTER) {
-    //             mValueTemp.insert(cursor.textIndex, "\n");
-    //             // mCursorPos++;
-    //             mCursorRow++;
-    //             cursor.textIndex++;
-    //             updateRowText();
-    //             mCursorPos = 0;
-    //             // if (!mCommitted)
-    //             //     focusEvent(false);
-    //         } else if (key == GLFW_KEY_A && modifiers == SYSTEM_COMMAND_MOD) {
-    //             mCursorPos = (int) mValueTemp.length();
-    //             mSelectionPos = 0;
-    //         } else if (key == GLFW_KEY_X && modifiers == SYSTEM_COMMAND_MOD) {
-    //             copySelection();
-    //             deleteSelection();
-    //         } else if (key == GLFW_KEY_C && modifiers == SYSTEM_COMMAND_MOD) {
-    //             copySelection();
-    //         } else if (key == GLFW_KEY_V && modifiers == SYSTEM_COMMAND_MOD) {
-    //             deleteSelection();
-    //             pasteFromClipboard();
-    //         }
+    return 0;
+}
 
-    //         mValidFormat =
-    //             (mValueTemp == "") || checkFormat(mValueTemp, mFormat);
-    //     }
+float TextAreaWidget::cursorIndex2Position(const NVGglyphPosition *glyphs, int nglyphs, int nRows) {
+    // textCursor.posX = 0;
+    if (textCursor.index >= nglyphs){
+        textCursor.posX = glyphs[nglyphs-1].maxx; // last character
+        textCursor.index = nglyphs;
+    } else {
+        textCursor.posX = glyphs[textCursor.index].x;
+    }
 
-        // return true;
-    // }
+    if (textCursor.row < nRows){
+        textCursor.posY = textCursor.row * textBlock.lineh;
+    } else {
+        textCursor.row = textBlock.rows-1;
+    }
 
-    // return false;
-// }
+    return textCursor.posX;
+}
