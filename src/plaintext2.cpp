@@ -85,10 +85,27 @@ bool TextAreaWidget::mouseButtonEvent(const Vector2i &p, int button, bool down, 
 }
 
 bool TextAreaWidget::keyboardCharacterEvent(unsigned int codepoint) {
-	std::cout << "caracter event\n";
+	// std::cout << "caracter event\n";
 	std::ostringstream convert;
 	convert << (char) codepoint;
-	text.append(convert.str());
+    // std::cout << convert.str() << " <- simvol\n";
+    
+    text.insert(textCursor.textIndex+1, convert.str());
+    
+    // text += "   ";
+    // if (textCursor.index > textBlock.indexes && textCursor.row < textBlock.rows-1) {
+    //     textCursor.row++;
+    //     textCursor.index = 0;
+    // }
+
+	// text.append(convert.str());
+    
+    // if (convert.str() == " ") {
+    //     textCursor.index++;
+    // }
+
+    textCursor.index++;
+    std::cout << text << ".\n";
 	return true;
 	// return false;
 }

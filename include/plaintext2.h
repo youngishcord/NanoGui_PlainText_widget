@@ -107,6 +107,19 @@ public:
 
             cursorIndex2Position(glyphs, textBlock.indexes, textBlock.rows);
 
+
+            // Опасное место
+            textCursor.textIndex = glyphs[textCursor.index].str - (rows[0].start);
+            std::cout << textCursor.textIndex << ", " << textCursor.index << ", \n" << glyphs[textCursor.index].str << "\n";
+
+
+            // textCursor.textIndex = 0;
+            // for (int i = 0; i < textCursor.row; i++) {
+                // textCursor.textIndex = textCursor.textIndex + (rows[i].next - rows[i].start);
+                // rows[i].end
+            // }
+            // textCursor.textIndex += textCursor.index;
+
             nvgBeginPath(ctx);
             nvgMoveTo(ctx, textCursor.posX, textCursor.posY);
             nvgLineTo(ctx, textCursor.posX, textCursor.posY + textBlock.lineh);
@@ -140,8 +153,8 @@ public:
 protected:
     bool mEditable = true;
 
-    std::string text = "Of course we can still daisy chain cubic Bézier "
-        "curves by adding another curve to our path. Lets add the second pair "
+    std::string text = "Of course we can still daisy chain cubic bezier "
+        "curves by adding another curve to our path. \nLets add the second pair "
         "of quadratic curves as a single cubic curve to our current path:";
     // int offset = 10;
 
