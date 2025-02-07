@@ -55,10 +55,14 @@ public:
         int row, index, textIndex; // Строка и индекс в многострочном тексте, 
                                    // полнотекстовый индекс для редактирования
         float posX, posY;          // Положение для рисования курсора
+        float targetX, targetY;
+        bool updateRequest;
     };
 
     TextAreaWidget(Widget *parent) : Widget(parent) {
         textCursor = TextCursor(0, 0, 0, 10.0f, 10.0f);
+        textBlock = TextBlock(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0);
+
     }
 
     void draw(NVGcontext *ctx) override {
@@ -67,13 +71,18 @@ public:
         nvgFontSize(ctx, fontSize());
         nvgFontFace(ctx, "sans");
         nvgTextAlign(ctx, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+        // nvgTextAlign(ctx, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
+        // nvgTextAlign(ctx, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
+        // int renderX = (mPos.x() + 300)/2;
 
         // Высота строки для дальнейшего рисования текста и курсора
         nvgTextMetrics(ctx, nullptr, nullptr, &textBlock.lineh);
 
+        // if (!textBlock.rows) {
+        //     textBlock.rows = nvgTextBreakLines(ctx, text.c_str(), nullptr, 300.0f-10, nullptr, 1024);
+        // }
+
         if (focused()) {
-            // nvgTextAlign(ctx, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-            // nvgTextAlign(ctx, NVG_ALIGN_RIGHT | NVG_ALIGN_MIDDLE);
             NVGtextRow rows[1024];
             textBlock.rows = nvgTextBreakLines(ctx, text.c_str(), nullptr, 300.0f-10, rows, 1024);
 
@@ -83,10 +92,19 @@ public:
             }
 
             // Рисование курсора
+
+            // Обновление положения курсора под необходимые координаты
+            if (textCursor.updateRequest) {
+                position2CursorIndex(ctx, textCursor.targetX, textCursor.targetY, rows);
+                textCursor.updateRequest = false;
+            }
+
             const int maxGlyphs = 1024;
             NVGglyphPosition glyphs[maxGlyphs];
             textBlock.indexes = nvgTextGlyphPositions(ctx, mPos.x(), mPos.y(),
                 rows[textCursor.row].start, rows[textCursor.row].end, glyphs, maxGlyphs);
+            
+
             cursorIndex2Position(glyphs, textBlock.indexes, textBlock.rows);
 
             nvgBeginPath(ctx);
@@ -97,6 +115,7 @@ public:
             nvgStroke(ctx);
         } else {
             nvgTextBox(ctx, mPos.x(), mPos.y()+10, 300-10, text.c_str(), nullptr);
+            // textBlock.rows = nvgTextBreakLines(ctx, text.c_str(), nullptr, 300.0f-10, nullptr, 1024);
         }
     }
 
@@ -115,7 +134,7 @@ public:
     virtual bool mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) override;
     virtual bool keyboardCharacterEvent(unsigned int codepoint) override;
 
-    int position2CursorIndex(NVGcontext *ctx, float posX, float posY, float *textBound, const NVGtextRow *rows, int size, int nRows, float lineh);
+    int position2CursorIndex(NVGcontext *ctx, float posX, float posY, NVGtextRow *rows);
     float cursorIndex2Position(const NVGglyphPosition *glyphs, int nglyphs, int nRows);
 
 protected:

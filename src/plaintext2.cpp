@@ -73,8 +73,12 @@ bool PlainText2::keyboardCharacterEvent(unsigned int codepoint) {
 bool TextAreaWidget::mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) {
 	Widget::mouseButtonEvent(p, button, down, modifiers);
 	// std::cout << "click!\n";
+
 	if (button == GLFW_MOUSE_BUTTON_1 && down) {
 		std::cout << p.x() << ", " << p.y() << "\n";
+        textCursor.targetX = p.x();
+        textCursor.targetY = p.y();
+        textCursor.updateRequest = true;
 	}
 
 	return false;
@@ -114,6 +118,9 @@ bool TextAreaWidget::keyboardEvent(int key, int scancode, int action, int modifi
             } else if (key == GLFW_KEY_UP) { // Стрелка вверх
                 if (textCursor.row > 0) {
                     textCursor.row--;
+                    textCursor.targetY = -1.0;
+                    textCursor.targetX = textCursor.posX;
+                    textCursor.updateRequest = true;
                 } else {
                     textCursor.index = 0;
                 }
@@ -121,6 +128,9 @@ bool TextAreaWidget::keyboardEvent(int key, int scancode, int action, int modifi
             } else if (key == GLFW_KEY_DOWN) { // Стрелка вниз
                 if (textCursor.row < textBlock.rows-1) {
                     textCursor.row++;
+                    textCursor.targetY = -1.0;
+                    textCursor.targetX = textCursor.posX;
+                    textCursor.updateRequest = true;
                 } else {
                     textCursor.index = textBlock.indexes;
                 }
@@ -134,14 +144,41 @@ bool TextAreaWidget::keyboardEvent(int key, int scancode, int action, int modifi
 // Метод для обновления положения курсора в
 // void TextAreaWidget::updateCursor()
 
-int TextAreaWidget::position2CursorIndex(NVGcontext *ctx, float posX, float posY, float *textBound, 
-    const NVGtextRow *rows, int size, int nRows, float lineh) 
+// Результатом работы функции фактически является значение строки и индекс в тексте
+int TextAreaWidget::position2CursorIndex(NVGcontext *ctx, float posX, float posY, NVGtextRow *rows) 
 {
-    textCursor.row = (int)((posY - textBound[1]) / lineh);
+    if (posY >= 0) {
+        textCursor.row = (int)(posY / textBlock.lineh); 
+        if (textCursor.row >= textBlock.rows) {
+            textCursor.row = textBlock.rows-1;
+        }
+    }
 
+    if (posX >= 0) {
+        const int maxGlyphs = 1024;
+        NVGglyphPosition glyphs[maxGlyphs];
+        textBlock.indexes = nvgTextGlyphPositions(ctx, mPos.x(), mPos.y(),
+            rows[textCursor.row].start, rows[textCursor.row].end, glyphs, maxGlyphs);
+
+        textBlock.width = nvgTextBounds(ctx, 0, 0, rows[textCursor.row].start, rows[textCursor.row].end, nullptr);
+        
+        textCursor.index = 0;
+        float caretx = glyphs[textCursor.index].x;
+        for (int i = 1; i < textBlock.indexes; i++) {
+            // std::cout << glyphs[i].x << ",";
+            if (std::abs(caretx - posX) > std::abs(glyphs[i].x - posX)) {
+                textCursor.index = i;
+                caretx = glyphs[textCursor.index].x;
+            }
+        }
+
+        if (std::abs(caretx - posX) > std::abs(textBlock.width - posX)) 
+            textCursor.index = textBlock.indexes;
+    }
     // Тут надо делать поправку на выравнивание текста но это позже
 
     return 0;
+
 }
 
 float TextAreaWidget::cursorIndex2Position(const NVGglyphPosition *glyphs, int nglyphs, int nRows) {
